@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace Middleware
 {
@@ -46,6 +47,55 @@ namespace Middleware
             app.UseRouting();
 
             app.UseAuthorization();
+
+
+
+            app.Use(async (context, next) =>
+            {
+                //logic on request
+                await context.Response.WriteAsync("<p>hello midd1</p>");
+                await next();
+                //logic on response
+            });
+
+            app.Use(async (context, next) =>
+            {
+                //logic on request
+                await context.Response.WriteAsync("<p>First</p>");
+                await next();
+                //logic on response
+            });
+            app.Map("/angular", action =>
+            {
+                action.Use(async (context, next) =>
+                {
+                    await context.Response.WriteAsync("<p>Angular 6</p>");
+                    await next();
+                });
+                action.Use(async (context, next) =>
+                {
+                    await context.Response.WriteAsync("<p>was released</p>");
+                    await next();
+                });
+                action.Run(async context =>
+                {
+                    await context.Response.WriteAsync("<p>May 3rd 2018</p>");
+                });
+            });
+
+            app.MapWhen(context => context.Request.Query.ContainsKey("name"), action =>
+            {
+                action.Run(async context =>
+                {
+                    var name = context.Request.Query["name"];
+                    await context.Response.WriteAsync($"<h1>Hello {name}</h1>");
+                });
+            });
+
+            app.Run(async context =>
+            {
+                await context.Response.WriteAsync("<p>hello RUN non map midd</p>");
+            });
 
             app.UseEndpoints(endpoints =>
             {
